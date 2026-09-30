@@ -1,4 +1,5 @@
 import os
+from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 import psycopg
 from psycopg.rows import dict_row
@@ -41,15 +42,51 @@ def init_db():
         conn.commit()
 
 
-def get_all_tasks():
+def get_all_tasks() -> List[Dict[str, Any]]:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM tasks ORDER BY id")
             return cur.fetchall()
 
 
-def get_task_by_id(task_id: int):
+def get_task_by_id(task_id: int) -> Optional[Dict[str, Any]]:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM tasks WHERE id = %s", (task_id,))
             return cur.fetchone()
+
+
+def create_task(title: str, done: bool = False) -> Dict[str, Any]:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO tasks (title, done) VALUES (%s, %s) RETURNING *",
+                (title, done),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return row
+
+
+def update_task(task_id: int, title: str, done: bool) -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE tasks SET title = %s, done = %s WHERE id = %s RETURNING *",
+                (title, done, task_id),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return row
+
+
+def delete_task(task_id: int) -> bool:
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM tasks WHERE id = %s RETURNING id",
+                (task_id,),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return row is not None

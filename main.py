@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.responses import JSONResponse
 import repository
 
@@ -51,3 +51,62 @@ async def get_task(id: int):
     if task is None:
         return JSONResponse(status_code=404, content={"error": "Task not found"})
     return task
+
+
+@app.post(
+    "/tasks",
+    status_code=201,
+    summary="Create Task",
+    description="Creates a new task.",
+)
+async def create_task(task: dict):
+    if not isinstance(task, dict):
+        return JSONResponse(status_code=400, content={"error": "Invalid request body"})
+    title = task.get("title")
+    if title is None or not str(title).strip():
+        return JSONResponse(status_code=400, content={"error": "Title is required"})
+    done = bool(task.get("done", False))
+    new_task = repository.create_task(title=str(title).strip(), done=done)
+    return new_task
+
+
+@app.put(
+    "/tasks/{id}",
+    summary="Update Task",
+    description="Updates the title and/or completion status of a task.",
+)
+async def update_task(id: int, updated_task: dict):
+    if not isinstance(updated_task, dict) or not updated_task:
+        return JSONResponse(
+            status_code=400, content={"error": "Request body cannot be empty"}
+        )
+
+    existing_task = repository.get_task_by_id(id)
+    if existing_task is None:
+        return JSONResponse(status_code=404, content={"error": "Task not found"})
+
+    title = updated_task.get("title", existing_task["title"])
+    if "title" in updated_task and not str(title).strip():
+        return JSONResponse(status_code=400, content={"error": "Title is required"})
+
+    done = updated_task.get("done", existing_task["done"])
+    if not isinstance(done, bool):
+        done = bool(done)
+
+    task = repository.update_task(task_id=id, title=str(title).strip(), done=done)
+    return task
+
+
+@app.delete(
+    "/tasks/{id}",
+    status_code=204,
+    summary="Delete Task",
+    description="Deletes a task by its ID.",
+)
+async def delete_task(id: int):
+    existing_task = repository.get_task_by_id(id)
+    if existing_task is None:
+        return JSONResponse(status_code=404, content={"error": "Task not found"})
+
+    repository.delete_task(id)
+    return Response(status_code=204)
