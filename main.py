@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 import repository
 
 
@@ -33,3 +34,20 @@ async def root():
 )
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/tasks", summary="Get All Tasks", description="Returns a list of all tasks.")
+async def get_tasks():
+    return repository.get_all_tasks()
+
+
+@app.get(
+    "/tasks/{id}",
+    summary="Get Task by ID",
+    description="Returns a task by its ID.",
+)
+async def get_task(id: int):
+    task = repository.get_task_by_id(id)
+    if task is None:
+        return JSONResponse(status_code=404, content={"error": "Task not found"})
+    return task

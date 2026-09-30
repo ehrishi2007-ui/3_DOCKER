@@ -39,3 +39,17 @@ def init_db():
                     ("Test endpoints", True),
                 )
         conn.commit()
+
+
+def get_all_tasks():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM tasks ORDER BY id")
+            return cur.fetchall()
+
+
+def get_task_by_id(task_id: int):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM tasks WHERE id = %s", (task_id,))
+            return cur.fetchone()
