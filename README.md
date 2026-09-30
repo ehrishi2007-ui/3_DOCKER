@@ -139,3 +139,6 @@ docker compose up --build
 ```
 
 The API will be available at `http://localhost:3000`. Interactive documentation (Swagger UI) is accessible at `http://localhost:3000/docs`.
+
+
+DICLAIMER : THIS ASSIGNMENT IS A PART OF flyrankAI INTERNSHIP
